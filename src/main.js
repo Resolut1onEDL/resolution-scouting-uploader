@@ -188,6 +188,18 @@ async function processReplay(filePath, matchIdHint) {
     );
     emit('upload-success', { matchId: parsed.id, result, stats });
   } catch (e) {
+    // Permanent rejections — skip retry. Server has explicitly told us
+    // the replay doesn't belong to the registered player (anti-spoof
+    // hit, e.g. user has a watched/downloaded .dem in their replays
+    // folder), so retrying won't change the outcome.
+    const isPermanent = /registered player.*not found/i.test(e.message ?? '');
+    if (isPermanent) {
+      pushLog('warn', `Skipped match_id=${parsed?.id}: replay does not contain your Steam ID (probably a watched or downloaded replay). Not retrying.`);
+      stats.totalFailures++;
+      store.set('totalFailures', stats.totalFailures);
+      emit('upload-error', { matchId: parsed?.id, error: e.message, permanent: true });
+      return;
+    }
     pushLog('error', `Upload failed: ${e.message}; saved for retry`);
     stats.totalFailures++;
     store.set('totalFailures', stats.totalFailures);
