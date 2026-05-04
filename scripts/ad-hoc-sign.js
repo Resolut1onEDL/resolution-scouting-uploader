@@ -21,8 +21,13 @@ module.exports = async function adHocSign(context) {
   );
   console.log(`[ad-hoc-sign] codesign --sign - ${appPath}`);
   try {
+    // NOTE: do NOT use --options runtime here. Hardened runtime
+    // requires notarization (which we don't have without an Apple
+    // Developer ID), and Gatekeeper rejects hardened-but-unnotarized
+    // apps with no bypass. Plain ad-hoc signature is the right call
+    // for "best-effort unsigned" — same as upstream gamerjournal.
     execSync(
-      `codesign --force --deep --sign - --options runtime "${appPath}"`,
+      `codesign --force --deep --sign - "${appPath}"`,
       { stdio: 'inherit' },
     );
     console.log('[ad-hoc-sign] ok');
