@@ -18,7 +18,10 @@ const path = require('node:path');
 const zlib = require('node:zlib');
 const { pipeline } = require('node:stream/promises');
 
-const DEFAULT_API_URL = 'https://evnavwovdrwsootzljib.supabase.co';
+// Scouting backend lives on the Pro-tier Supabase project
+// (brlrapwlwomweuzovhoi). Free-tier had a 50MB per-upload cap that
+// blocked .dem uploads for any non-trivial match.
+const DEFAULT_API_URL = 'https://brlrapwlwomweuzovhoi.supabase.co';
 
 async function uploadParsedReplay({
   parsed,

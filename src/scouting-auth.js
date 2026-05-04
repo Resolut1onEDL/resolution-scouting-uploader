@@ -18,7 +18,9 @@
 const http = require('node:http');
 const { shell } = require('electron');
 
-const SUPABASE_URL = 'https://evnavwovdrwsootzljib.supabase.co';
+// Pro-tier Supabase project (brlrapwlwomweuzovhoi) — see uploader.js
+// for context on why scouting is on a separate project.
+const SUPABASE_URL = 'https://brlrapwlwomweuzovhoi.supabase.co';
 const PREFERRED_PORTS = [5173, 3000]; // must be in scouting-auth-web allowlist
 const TIMEOUT_MS = 5 * 60 * 1000; // 5 min for user to finish OAuth
 

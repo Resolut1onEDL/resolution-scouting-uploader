@@ -1,6 +1,6 @@
 {
   "name": "resolution-scouting-uploader",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Resolution Scouting — desktop agent that scans Dota 2 replays, parses .dem files locally (manta), and uploads parsed JSON + compressed .dem to resolut1on.gg/scouting.",
   "main": "src/main.js",
   "parserVersion": "v3.1.4",
