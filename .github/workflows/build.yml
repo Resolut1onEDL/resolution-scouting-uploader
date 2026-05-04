@@ -58,18 +58,17 @@ jobs:
       - run: npm install
 
       # macOS build is unsigned — we don't have an Apple Developer ID
-      # ($99/yr) so we can't notarize. Without ANY signature at all,
-      # macOS Gatekeeper rejects the app as "damaged and can't be opened"
-      # and right-click→Open won't bypass it.
+      # ($99/yr) so Gatekeeper rejects the .app as "damaged and can't
+      # be opened" with no right-click→Open bypass.
       #
-      # Workaround: ad-hoc codesign with `--sign -`. This adds an
-      # unverified signature to the binary, which downgrades the
-      # Gatekeeper rejection from "damaged" → "cannot verify developer".
-      # The latter CAN be bypassed via right-click→Open or
-      # `xattr -cr <app>`. Distribution still requires the user to do
-      # that bypass once on first launch.
+      # Workaround for users: run `xattr -cr ~/Downloads/<dmg>` before
+      # opening, OR `xattr -cr "/Applications/Resolution Scouting.app"`
+      # after install. Documented in release notes.
       #
-      # We build for arm64 only (Apple Silicon).
+      # Pre-build ad-hoc codesign attempt: `afterPack` hook (configured
+      # via package.json build.afterPack) signs the .app before
+      # electron-builder packs it into the dmg. This avoids needing to
+      # mount/re-flatten/re-upload after the fact.
       - name: build (and publish on tag)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,70 +78,6 @@ jobs:
             npx electron-builder --mac --arm64 --publish always
           else
             npx electron-builder --mac --arm64 --publish never
-          fi
-
-      # Ad-hoc sign the .app inside the .dmg so Gatekeeper doesn't flag
-      # it as "damaged". This is post-build because electron-builder
-      # zips the dmg before we can touch the .app. We re-sign by
-      # remounting the dmg in writable mode.
-      - name: ad-hoc codesign .app inside .dmg
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: |
-          set -euo pipefail
-          for dmg in dist/*.dmg; do
-            echo "Signing $dmg..."
-            # Convert to writable shadow image, mount, sign, eject, convert back
-            shadow="${dmg}.shadow"
-            mountpoint=$(mktemp -d)
-            hdiutil attach "$dmg" -shadow "$shadow" -mountpoint "$mountpoint" -nobrowse -noverify -noautoopen
-            app_path=$(find "$mountpoint" -maxdepth 2 -name "*.app" | head -1)
-            if [ -n "$app_path" ]; then
-              codesign --force --deep --sign - "$app_path" || echo "codesign failed (non-fatal)"
-            fi
-            hdiutil detach "$mountpoint" -quiet
-            # Re-flatten dmg with shadow merged in
-            tmp_dmg="${dmg}.tmp"
-            hdiutil convert "$dmg" -shadow "$shadow" -format UDZO -o "$tmp_dmg"
-            mv -f "$tmp_dmg" "$dmg"
-            rm -f "$shadow"
-            # blockmap regen — electron-updater needs it consistent with the dmg
-          done
-          # Regenerate latest-mac.yml sha512 since dmg bytes changed.
-          cd dist
-          for dmg in *.dmg; do
-            sha=$(shasum -a 512 "$dmg" | awk '{print $1}' | xxd -r -p | base64)
-            size=$(stat -f%z "$dmg")
-            echo "Updated sha for $dmg: $sha ($size bytes)"
-            # latest-mac.yml is a YAML — patch sha512 + size in-place if present
-            python3 - "$dmg" "$sha" "$size" <<'PY'
-import sys, re, pathlib
-dmg, sha, size = sys.argv[1], sys.argv[2], int(sys.argv[3])
-y = pathlib.Path("latest-mac.yml")
-if not y.exists():
-    sys.exit(0)
-text = y.read_text()
-text = re.sub(r'(    sha512:) [^\n]+', f'\\1 {sha}', text, count=1)
-text = re.sub(r'(    size:) \d+', f'\\1 {size}', text, count=1)
-text = re.sub(r'(\nsha512:) [^\n]+', f'\\1 {sha}', text, count=1)
-text = re.sub(r'(\nsize:) \d+', f'\\1 {size}', text, count=1)
-y.write_text(text)
-PY
-          done
-
-      # Re-upload to release after ad-hoc sign (electron-builder already
-      # uploaded the unsigned dmg with --publish always; we need to
-      # replace it with the signed one).
-      - name: re-upload signed dmg to release
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          for dmg in dist/*.dmg; do
-            gh release upload "$tag" "$dmg" --clobber
-          done
-          if [ -f dist/latest-mac.yml ]; then
-            gh release upload "$tag" dist/latest-mac.yml --clobber
           fi
 
       - uses: actions/upload-artifact@v4

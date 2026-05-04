@@ -36,6 +36,7 @@
       "src/**/*",
       "package.json"
     ],
+    "afterPack": "scripts/ad-hoc-sign.js",
     "publish": [
       {
         "provider": "github",
