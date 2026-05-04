@@ -1,0 +1,82 @@
+{
+  "name": "resolution-scouting-uploader",
+  "version": "0.1.0",
+  "description": "Resolution Scouting — desktop agent that scans Dota 2 replays, parses .dem files locally (manta), and uploads parsed JSON + compressed .dem to resolut1on.gg/scouting.",
+  "main": "src/main.js",
+  "parserVersion": "v3.1.4",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --publish never",
+    "build:win": "electron-builder --win --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:linux": "electron-builder --linux --publish never",
+    "cli": "node scripts/cli-test.js",
+    "postinstall": "node scripts/install-parser.js"
+  },
+  "author": "Resolut1onEDL",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.8.3",
+    "express": "^4.18.2"
+  },
+  "build": {
+    "appId": "gg.resolut1on.scouting",
+    "productName": "Resolution Scouting",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Resolut1onEDL",
+        "repo": "resolution-scouting-uploader",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "extraResources": [
+        {
+          "from": "bin/parser-win-${arch}.exe",
+          "to": "parser.exe"
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg",
+      "extraResources": [
+        {
+          "from": "bin/parser-mac-${arch}",
+          "to": "parser"
+        }
+      ]
+    },
+    "linux": {
+      "target": "AppImage",
+      "extraResources": [
+        {
+          "from": "bin/parser-linux-${arch}",
+          "to": "parser"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": true
+    }
+  }
+}

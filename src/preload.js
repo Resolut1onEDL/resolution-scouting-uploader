@@ -1,0 +1,22 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: (s) => ipcRenderer.invoke('save-settings', s),
+  selectDotaFolder: () => ipcRenderer.invoke('select-dota-folder'),
+  installGsi: () => ipcRenderer.invoke('install-gsi'),
+  testConnection: () => ipcRenderer.invoke('test-connection'),
+  steamAuth: () => ipcRenderer.invoke('steam-auth'),
+  disconnectSteam: () => ipcRenderer.invoke('disconnect-steam'),
+  retryPending: () => ipcRenderer.invoke('retry-pending'),
+  getStats: () => ipcRenderer.invoke('get-stats'),
+  reparseFile: (filePath) => ipcRenderer.invoke('reparse-file', filePath),
+  reparseFolder: (opts) => ipcRenderer.invoke('reparse-folder', opts),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+  getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
+  // events: subscribe to push updates
+  onEvent: (cb) => {
+    ipcRenderer.on('app-event', (_, payload) => cb(payload));
+  },
+});
