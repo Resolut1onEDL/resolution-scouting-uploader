@@ -178,11 +178,13 @@ async function processReplay(filePath, matchIdHint) {
     store.set('totalUploads', stats.totalUploads);
     store.set('lastUploadAt', stats.lastUploadAt);
     refreshTray();
+    const newOrUpdate = result.newly_inserted ? 'new' : 'updated';
+    const demStatus = result.dem_upload_result
+      ? `dem ${(result.dem_upload_result.bytes / 1048576).toFixed(1)} MB`
+      : 'dem skipped';
     pushLog(
       'info',
-      `Uploaded match_id=${parsed.id} → game_id=${result.game_id}${
-        result.warnings ? ` (warnings: ${result.warnings.join('; ')})` : ''
-      }`,
+      `Uploaded match_id=${parsed.id} (${newOrUpdate}, total=${result.n_total_replays ?? '?'}, ${demStatus})`,
     );
     emit('upload-success', { matchId: parsed.id, result, stats });
   } catch (e) {
